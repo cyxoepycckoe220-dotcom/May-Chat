@@ -1,108 +1,4 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>May</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #121212;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        #chat-container {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 15px;
-            width: 400px;
-            display: none;
-            box-shadow: 0 0 15px rgba(255,255,255,0.05);
-        }
-        #messages {
-            height: 300px;
-            overflow-y: auto;
-            background: #161616;
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        #messages p {
-            margin: 5px 0;
-            padding: 6px;
-            background: #2a2a2a;
-            border-radius: 6px;
-            border-left: 3px solid #4CAF50;
-        }
-        .input-area {
-            display: flex;
-            gap: 10px;
-        }
-        input, button {
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-        }
-        button {
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:hover {
-            background: #45a049;
-        }
-        #login-form, #nickname-form {
-            background: #1e1e1e;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            width: 300px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.05);
-        }
-        .hidden {
-            display: none;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-    </style>
-</head>
-<body>
-
-<!-- 1. Экран входа -->
-<div id="login-form">
-    <h1>May</h1>
-    <p>Войди, чтобы начать общение</p>
-    <button onclick="login()">Войти через Google</button>
-</div>
-
-<!-- 2. Экран ввода никнейма -->
-<div id="nickname-form" class="hidden">
-    <h2>Как тебя называть?</h2>
-    <input type="text" id="nicknameInput" placeholder="Твой никнейм">
-    <button onclick="saveNickname()">Готово</button>
-</div>
-
-<!-- 3. Чат -->
-<div id="chat-container">
-    <div id="messages"></div>
-    <div class="input-area">
-        <input type="text" id="msgInput" placeholder="Напиши что-нибудь...">
-        <button onclick="sendMessage()">Отправить</button>
-    </div>
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <script>
-    // 🔑 ВСТАВЬ СВОИ КЛЮЧИ ИЗ FIREBASE СЮДА
     const firebaseConfig = {
   apiKey: "AIzaSyBfhMJfnZQnzHdN8zc8FJV2Ub9IZuy_UrA",
   authDomain: "chat-a7e53.firebaseapp.com",
@@ -120,25 +16,31 @@
 
     // Вход через Google
     function login() {
-        auth.signInWithPopup(googleProvider).then(() => checkUser());
+        auth.signInWithPopup(googleProvider);
     }
 
-    // Проверка: есть ли уже никнейм у пользователя
-    function checkUser() {
-        const user = auth.currentUser;
-        if (!user) return;
-        db.ref('users/' + user.uid + '/nickname').once('value', snap => {
-            if (snap.exists()) {
-                document.getElementById('login-form').classList.add('hidden');
-                document.getElementById('nickname-form').classList.add('hidden');
-                document.getElementById('chat-container').style.display = 'block';
-                loadMessages();
-            } else {
-                document.getElementById('login-form').classList.add('hidden');
-                document.getElementById('nickname-form').classList.remove('hidden');
-            }
-        });
-    }
+    // Слушатель состояния входа (работает постоянно)
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Пользователь вошёл
+            db.ref('users/' + user.uid + '/nickname').once('value', snap => {
+                if (snap.exists()) {
+                    document.getElementById('login-form').classList.add('hidden');
+                    document.getElementById('nickname-form').classList.add('hidden');
+                    document.getElementById('chat-container').style.display = 'block';
+                    loadMessages();
+                } else {
+                    document.getElementById('login-form').classList.add('hidden');
+                    document.getElementById('nickname-form').classList.remove('hidden');
+                }
+            });
+        } else {
+            // Пользователь вышел
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('nickname-form').classList.add('hidden');
+            document.getElementById('chat-container').style.display = 'none';
+        }
+    });
 
     // Сохранение никнейма
     function saveNickname() {
@@ -167,7 +69,7 @@
         document.getElementById('msgInput').value = '';
     }
 
-    // Загрузка сообщений в реальном времени
+    // Загрузка сообщений
     function loadMessages() {
         db.ref('messages').orderByChild('timestamp').on('child_added', snapshot => {
             const msg = snapshot.val();
@@ -177,5 +79,3 @@
         });
     }
 </script>
-</body>
-</html>
