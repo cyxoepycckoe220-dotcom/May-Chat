@@ -4,61 +4,51 @@
   authDomain: "chat-a7e53.firebaseapp.com",
   databaseURL: "https://chat-a7e53-default-rtdb.firebaseio.com",
   projectId: "chat-a7e53",
-  storageBucket: "chat-a7e53.firebasestorage.app",
-  messagingSenderId: "702345463383",
-  appId: "1:702345463383:web:f6120e2d82bee90e308512"
-};
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
     const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-    // Вход через Google
     function login() {
         auth.signInWithPopup(googleProvider);
     }
 
-    // Слушатель состояния входа (работает постоянно)
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(function(user) {
         if (user) {
-            // Пользователь вошёл
-            db.ref('users/' + user.uid + '/nickname').once('value', snap => {
+            db.ref('users/' + user.uid + '/nickname').once('value', function(snap) {
                 if (snap.exists()) {
-                    document.getElementById('login-form').classList.add('hidden');
-                    document.getElementById('nickname-form').classList.add('hidden');
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('nickname-form').style.display = 'none';
                     document.getElementById('chat-container').style.display = 'block';
                     loadMessages();
                 } else {
-                    document.getElementById('login-form').classList.add('hidden');
-                    document.getElementById('nickname-form').classList.remove('hidden');
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('nickname-form').style.display = 'block';
                 }
             });
         } else {
-            // Пользователь вышел
-            document.getElementById('login-form').classList.remove('hidden');
-            document.getElementById('nickname-form').classList.add('hidden');
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('nickname-form').style.display = 'none';
             document.getElementById('chat-container').style.display = 'none';
         }
     });
 
-    // Сохранение никнейма
     function saveNickname() {
         const nickname = document.getElementById('nicknameInput').value;
         if (!nickname) return alert('Введи никнейм!');
         const user = auth.currentUser;
         db.ref('users/' + user.uid + '/nickname').set(nickname);
-        document.getElementById('nickname-form').classList.add('hidden');
+        document.getElementById('nickname-form').style.display = 'none';
         document.getElementById('chat-container').style.display = 'block';
         loadMessages();
     }
 
-    // Отправка сообщения
     function sendMessage() {
         const text = document.getElementById('msgInput').value;
         if (!text) return;
         const user = auth.currentUser;
-        db.ref('users/' + user.uid + '/nickname').once('value', snap => {
+        db.ref('users/' + user.uid + '/nickname').once('value', function(snap) {
             const nickname = snap.val();
             db.ref('messages').push({
                 nickname: nickname,
@@ -69,9 +59,8 @@
         document.getElementById('msgInput').value = '';
     }
 
-    // Загрузка сообщений
     function loadMessages() {
-        db.ref('messages').orderByChild('timestamp').on('child_added', snapshot => {
+        db.ref('messages').orderByChild('timestamp').on('child_added', function(snapshot) {
             const msg = snapshot.val();
             const div = document.getElementById('messages');
             div.innerHTML += `<p><b>${msg.nickname}:</b> ${msg.text}</p>`;
